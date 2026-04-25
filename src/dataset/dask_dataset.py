@@ -21,7 +21,7 @@ class DaskDataset:
             raise FileNotFoundError(f"No Parquet files found in {self.data_folder}")
         
         # Load all Parquet files into a single Dask DataFrame
-        dask_df = dd.read_parquet(self.parquet_files)
+        dask_df = dd.read_parquet(self.parquet_files, engine='pyarrow')
         return dask_df
     
     def identify_column_types(self):
