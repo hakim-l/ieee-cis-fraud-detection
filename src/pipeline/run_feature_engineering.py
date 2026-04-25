@@ -75,11 +75,15 @@ if __name__ == "__main__":
         test_dask_dataset = DaskDataset(test_merged_dir)
         
         # Run feature engineering and save to processed directory
-        # train_processed_dir = PROCESSED_DATA_DIR / "train"
+        train_processed_dir = PROCESSED_DATA_DIR / "train"
         test_processed_dir = PROCESSED_DATA_DIR / "test"
 
         # print("Running feature engineering on training data...")
-        # run_feature_engineering(train_dask_dataset, train_processed_dir)
+        run_feature_engineering(
+            train_dask_dataset, 
+            train_processed_dir,
+            USED_FEATURE_NAMES
+            )
      
         # print("Running feature engineering on test data...")
         run_feature_engineering(
