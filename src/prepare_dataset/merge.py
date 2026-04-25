@@ -11,6 +11,7 @@ from loguru import logger
 import pandas as pd
 import os
 from src.utils.dask import create_dask_client
+from src.config import CATEGORICAL_FEATURES_LIST
 
 def make_output_meta(transaction_sample, identity_sample):
     """
@@ -72,6 +73,9 @@ def merge_identity_transactions(
 
     logger.info(f"Merging {dataset_type} identity and transactions on '{merge_on}'")
     merged_ddf = transactions_ddf.merge(identity_ddf, how="left")
+    for col in CATEGORICAL_FEATURES_LIST:
+        if col in merged_ddf.columns:
+            merged_ddf[col] = merged_ddf[col].astype(str)
 
     logger.info(f"Writing merged {dataset_type} data to {merged_dir}")
     merged_ddf.to_parquet(str(merged_dir), write_index=True, overwrite=True)

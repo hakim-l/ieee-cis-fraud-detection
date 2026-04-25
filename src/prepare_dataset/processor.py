@@ -163,7 +163,7 @@ class DatasetProcessor:
             # force categorical features to string type to preserve categories during merge
             for col in CATEGORICAL_FEATURES_LIST:
                 if col in chunk.columns:
-                    chunk[col] = self.force_column_to_string(chunk[col])
+                    chunk[col] = self.force_column_to_string(chunk[col]).astype(str)
 
             if is_transaction_file and is_test_file:
                 chunk= add_target_column_if_not_exists(chunk, target_column=TARGET_COLUMN)
