@@ -17,10 +17,17 @@ from src.config import (
     INTERIM_DATA_DIR,
     DEFAULT_TRAIN_CHUNKSIZE,
     # PARQUET_COMPRESSION,
-    TABLE_INDEX
+    TABLE_INDEX,
+    TARGET_COLUMN
 )
 from src.utils import list_files
 
+def add_target_column_if_not_exists(df, target_column=TARGET_COLUMN):
+    """Add a dummy target column to the DataFrame if it does not exist."""
+    if target_column not in df.columns:
+        logger.info(f"Target column '{target_column}' not found. Adding dummy target column with default value 0.")
+        df[target_column] = pd.NA
+    return df
 
 class DatasetProcessor:
     """Process raw IEEE CIS fraud detection data and save to interim format."""
@@ -142,6 +149,8 @@ class DatasetProcessor:
             chunk.columns= [
                 col.replace('-', '_') for col in chunk.columns
             ]
+
+            chunk= add_target_column_if_not_exists(chunk, target_column=TARGET_COLUMN)
             chunk.to_parquet(
                 output_file,
                 # compression=self.compression,
