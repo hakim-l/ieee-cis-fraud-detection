@@ -69,17 +69,43 @@ CATEGORICAL_FEATURE_DEFAULT_VALUE= 'Other'
 
 
 CATEGORICAL_FEATURE_MAPPING_FILES= [
+    INTERIM_DATA_DIR / "ProductCD_category_mapping.json",
     INTERIM_DATA_DIR / "device_info_category_mapping.json",
-    INTERIM_DATA_DIR / "id_30_category_mapping.json",
-    INTERIM_DATA_DIR / "id_31_category_mapping.json",
-    INTERIM_DATA_DIR / "id_33_category_mapping.json",
+    INTERIM_DATA_DIR / "device_type_category_mapping.json",
     INTERIM_DATA_DIR / "card1_category_mapping.json",
     INTERIM_DATA_DIR / "card2_category_mapping.json",
     INTERIM_DATA_DIR / "card3_category_mapping.json",
     INTERIM_DATA_DIR / "card4_category_mapping.json",
     INTERIM_DATA_DIR / "card5_category_mapping.json",
     INTERIM_DATA_DIR / "card6_category_mapping.json",
-    INTERIM_DATA_DIR / "ProductCD_category_mapping.json",
+
+    INTERIM_DATA_DIR / "id_12_category_mapping.json",
+    INTERIM_DATA_DIR / "id_13_category_mapping.json",
+    INTERIM_DATA_DIR / "id_14_category_mapping.json",
+    INTERIM_DATA_DIR / "id_15_category_mapping.json",
+    INTERIM_DATA_DIR / "id_16_category_mapping.json",
+    INTERIM_DATA_DIR / "id_17_category_mapping.json",
+    INTERIM_DATA_DIR / "id_18_category_mapping.json",
+    INTERIM_DATA_DIR / "id_19_category_mapping.json",
+    INTERIM_DATA_DIR / "id_20_category_mapping.json",
+    INTERIM_DATA_DIR / "id_21_category_mapping.json",
+    INTERIM_DATA_DIR / "id_22_category_mapping.json",
+    INTERIM_DATA_DIR / "id_23_category_mapping.json",
+    INTERIM_DATA_DIR / "id_24_category_mapping.json",
+    INTERIM_DATA_DIR / "id_25_category_mapping.json",
+    INTERIM_DATA_DIR / "id_26_category_mapping.json",
+    INTERIM_DATA_DIR / "id_27_category_mapping.json",
+    INTERIM_DATA_DIR / "id_28_category_mapping.json",   
+    INTERIM_DATA_DIR / "id_29_category_mapping.json",
+    INTERIM_DATA_DIR / "id_30_category_mapping.json",
+    INTERIM_DATA_DIR / "id_31_category_mapping.json",
+    INTERIM_DATA_DIR / "id_32_category_mapping.json",
+    INTERIM_DATA_DIR / "id_33_category_mapping.json",
+    INTERIM_DATA_DIR / "id_34_category_mapping.json",
+    INTERIM_DATA_DIR / "id_35_category_mapping.json",
+    INTERIM_DATA_DIR / "id_36_category_mapping.json",
+    INTERIM_DATA_DIR / "id_37_category_mapping.json",
+    INTERIM_DATA_DIR / "id_38_category_mapping.json"
 ]
 
 # used features for modeling after feature engineering
