@@ -75,7 +75,7 @@ class DatasetProcessor:
             logger.info(f"Ensured directory exists: {directory}")
 
     def force_column_to_string(self, ds: pd.Series) -> pd.DataFrame:
-        ds = ds.map(lambda x: str(x) if pd.notnull(x) else x).astype('string')
+        ds = ds.map(lambda x: str(x) if pd.notnull(x) else x).astype(str)
         return ds
 
     def process_all(self, overwrite: bool = False) -> None:
