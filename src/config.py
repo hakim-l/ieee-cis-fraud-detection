@@ -19,10 +19,61 @@ INTERIM_DATA_DIR = DATA_DIR / "interim"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
 
+# DATA INDEX
+TABLE_INDEX = "TransactionID"
+
+# CATEGORICAL FEATURE GROUPINGS
+CATEGORICAL_FEATURE_DEFAULT_VALUE= 'Other'
+CATEGORICAL_FEATURE_MAPPING_FILES= [
+    INTERIM_DATA_DIR / "device_info_category_mapping.json",
+    INTERIM_DATA_DIR / "id_30_category_mapping.json",
+    INTERIM_DATA_DIR / "id_31_category_mapping.json",
+    INTERIM_DATA_DIR / "id_33_category_mapping.json",
+    INTERIM_DATA_DIR / "card1_category_mapping.json",
+    INTERIM_DATA_DIR / "card2_category_mapping.json",
+    INTERIM_DATA_DIR / "card3_category_mapping.json",
+    INTERIM_DATA_DIR / "card4_category_mapping.json",
+    INTERIM_DATA_DIR / "card5_category_mapping.json",
+    INTERIM_DATA_DIR / "card6_category_mapping.json",
+    INTERIM_DATA_DIR / "ProductCD_category_mapping.json",
+]
+
+# used features for modeling after feature engineering
+
+USED_FEATURE_NAMES= [
+    # 'TransactionID',
+    'TransactionDT',
+    'TransactionAmt',
+    'ProductCD',
+    'card1',
+    'card2',
+    'card3',
+    'card4',
+    'card5',
+    'card6',
+    # 'addr1',
+    # 'addr2',
+    'dist1',
+    'dist2',
+    # 'P_emaildomain',
+    # 'R_emaildomain',
+    'C1',
+    'C2',
+    'C3',
+    'C4',
+    'C5',
+    'C6',
+    'C7',
+    'C8',
+    'C9',   
+]
+
+TARGET_COLUMN = "isFraud"
+
 # Model and training settings
 DEFAULT_RANDOM_STATE = 42
 DEFAULT_TEST_SIZE = 0.2
-DEFAULT_TRAIN_CHUNKSIZE = 1_000_000
+DEFAULT_TRAIN_CHUNKSIZE = 5_0_000
 
 # LightGBM parameters
 LGBM_PARAMS = {
