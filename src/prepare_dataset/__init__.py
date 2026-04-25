@@ -5,4 +5,6 @@ Handles converting raw CSV data to partitioned Parquet format in interim directo
 
 from .processor import DatasetProcessor
 
-__all__ = ["DatasetProcessor"]
+from .merge import merge_identity_transactions
+
+__all__ = ["DatasetProcessor", "merge_identity_transactions"]
