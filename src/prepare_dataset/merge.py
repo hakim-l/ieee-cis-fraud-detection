@@ -10,7 +10,7 @@ import dask.dataframe as dd
 from loguru import logger
 import pandas as pd
 import os
-from src.utils.dask_utils import setup_dask_cluster
+from src.utils.dask import setup_dask_cluster
 
 def make_output_meta(transaction_sample, identity_sample):
     """
