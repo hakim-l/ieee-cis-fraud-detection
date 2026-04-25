@@ -10,7 +10,7 @@ import dask.dataframe as dd
 from loguru import logger
 import pandas as pd
 import os
-from dask.distributed import Client
+from src.utils.dask_utils import setup_dask_cluster
 
 def make_output_meta(transaction_sample, identity_sample):
     """
@@ -81,7 +81,7 @@ def merge_identity_transactions(
 if __name__ == "__main__":
     interim_dir = Path("data/interim")
     
-    client = Client(n_workers=1, threads_per_worker=1)
+    client = setup_dask_cluster(n_workers=1, threads_per_worker=1)
     logger.info(f"Dask cluster started: {client}")
     with client:
         merge_identity_transactions(interim_dir, "train")
