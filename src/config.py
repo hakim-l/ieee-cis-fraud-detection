@@ -22,8 +22,28 @@ EXTERNAL_DATA_DIR = DATA_DIR / "external"
 # DATA INDEX
 TABLE_INDEX = "TransactionID"
 
+# CATEGORICAL FEATURES
+CATEGORICAL_FEATURES_LIST = [
+    "ProductCD",
+    "card1",
+    "card2",
+    "card3",
+    "card4",
+    "card5",
+    "card6",
+    "P_emaildomain",
+    "R_emaildomain",
+    "id_30",
+    "id_31",
+    "id_33",
+    "device_type",
+    "device_info",
+]
+
 # CATEGORICAL FEATURE GROUPINGS
 CATEGORICAL_FEATURE_DEFAULT_VALUE= 'Other'
+
+
 CATEGORICAL_FEATURE_MAPPING_FILES= [
     INTERIM_DATA_DIR / "device_info_category_mapping.json",
     INTERIM_DATA_DIR / "id_30_category_mapping.json",
