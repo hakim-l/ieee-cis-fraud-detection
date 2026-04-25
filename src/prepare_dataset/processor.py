@@ -26,7 +26,7 @@ def add_target_column_if_not_exists(df, target_column=TARGET_COLUMN):
     """Add a dummy target column to the DataFrame if it does not exist."""
     if target_column not in df.columns:
         logger.info(f"Target column '{target_column}' not found. Adding dummy target column with default value 0.")
-        df[target_column] = pd.NA
+        df[target_column] = -1
     return df
 
 class DatasetProcessor:
