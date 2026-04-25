@@ -81,7 +81,7 @@ def merge_identity_transactions(
 if __name__ == "__main__":
     interim_dir = Path("data/interim")
     
-    client = create_dask_client(n_workers=4, threads_per_worker=1, memory_limit='1GB')
+    client = create_dask_client(n_workers=1, threads_per_worker=1, memory_limit='4GB')
     logger.info(f"Dask cluster started: {client}")
     with client:
         merge_identity_transactions(interim_dir, "train")

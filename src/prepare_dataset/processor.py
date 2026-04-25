@@ -10,15 +10,18 @@ from pathlib import Path
 from typing import Optional
 import gc
 import pandas as pd
+import re
 from loguru import logger
 
 from src.config import (
+    CATEGORICAL_FEATURES,
     RAW_DATA_DIR,
     INTERIM_DATA_DIR,
     DEFAULT_TRAIN_CHUNKSIZE,
     # PARQUET_COMPRESSION,
     TABLE_INDEX,
-    TARGET_COLUMN
+    TARGET_COLUMN,
+    CATEGORICAL_FEATURES_LIST
 )
 from src.utils import list_files
 
@@ -70,6 +73,10 @@ class DatasetProcessor:
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
             logger.info(f"Ensured directory exists: {directory}")
+
+    def force_column_to_string(self, ds: pd.Series) -> pd.DataFrame:
+        ds = ds.map(lambda x: str(x) if pd.notnull(x) else x).astype('string')
+        return ds
 
     def process_all(self, overwrite: bool = False) -> None:
         """Process all raw data files to interim format.
@@ -150,7 +157,17 @@ class DatasetProcessor:
                 col.replace('-', '_') for col in chunk.columns
             ]
 
-            chunk= add_target_column_if_not_exists(chunk, target_column=TARGET_COLUMN)
+            is_transaction_file = re.search(r"transaction", csv_path.name, re.IGNORECASE) is not None
+            is_test_file = re.search(r"test", csv_path.name, re.IGNORECASE) is not None
+
+            # force categorical features to string type to preserve categories during merge
+            for col in CATEGORICAL_FEATURES_LIST:
+                if col in chunk.columns:
+                    chunk[col] = self.force_column_to_string(chunk[col])
+
+            if is_transaction_file and is_test_file:
+                chunk= add_target_column_if_not_exists(chunk, target_column=TARGET_COLUMN)
+
             chunk.to_parquet(
                 output_file,
                 # compression=self.compression,
