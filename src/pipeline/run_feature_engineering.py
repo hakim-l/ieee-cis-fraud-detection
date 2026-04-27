@@ -35,17 +35,16 @@ def force_categorical_to_string(dask_dataframe, categorical_columns):
             dask_dataframe[col] = dask_dataframe[col].astype(str)
     return dask_dataframe
 
-def run_feature_engineering(dask_dataset: DaskDataset, output_dir: str, used_feature_names: list):
+def run_feature_engineering(dask_dataset: DaskDataset, output_dir: str, used_feature_names: list, numeric_columns_to_scale: list, categorical_feature_mapping_list: list) -> bool:
     """Run the feature engineering pipeline on the given DaskDataset."""
     # Load categorical feature mappings
-    feature_mapping_list = get_categorical_feature_mappings()
     
     input_data_schema = dask_dataset.dataframe.head(1)  # Get the schema from the Dask DataFrame
     # Initialize feature engineering steps
-    group_categorical_features = GroupCategoricalFeatures(input_data_schema, feature_mapping_list)
+    group_categorical_features = GroupCategoricalFeatures(input_data_schema, categorical_feature_mapping_list)
     standard_scaling = StandardScaling(
         input_data_schema=input_data_schema,
-        columns_to_scale=dask_dataset.numeric_columns
+        columns_to_scale=numeric_columns_to_scale
         )
     
     dask_dataframe= dask_dataset.dataframe
@@ -78,16 +77,24 @@ if __name__ == "__main__":
         train_processed_dir = PROCESSED_DATA_DIR / "train"
         test_processed_dir = PROCESSED_DATA_DIR / "test"
 
+        # get categorical feature mappings
+        feature_mapping_list = get_categorical_feature_mappings()
+        numerical_columns_to_scale= train_dask_dataset.numeric_columns
+
         # print("Running feature engineering on training data...")
         run_feature_engineering(
             train_dask_dataset, 
             train_processed_dir,
-            USED_FEATURE_NAMES
+            USED_FEATURE_NAMES,
+            numeric_columns_to_scale= numerical_columns_to_scale,
+            categorical_feature_mapping_list= feature_mapping_list
             )
      
         # print("Running feature engineering on test data...")
         run_feature_engineering(
             test_dask_dataset, 
             test_processed_dir,
-            USED_FEATURE_NAMES
+            USED_FEATURE_NAMES,
+            numeric_columns_to_scale= numerical_columns_to_scale,
+            categorical_feature_mapping_list= feature_mapping_list
             )
