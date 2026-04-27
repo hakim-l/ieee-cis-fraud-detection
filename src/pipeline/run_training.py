@@ -116,10 +116,10 @@ if __name__ == "__main__":
         )
 
         y_train= y_train.compute()
-        train_pred= model.predict(train_dataframe_categorized[USED_FEATURE_NAMES])
+        train_pred= model.predict(x_train)
 
         y_val= y_validation.compute()
-        val_pred= model.predict(validation_set[USED_FEATURE_NAMES])
+        val_pred= model.predict(x_validation)
 
     print('Training set performance:')
     print(
