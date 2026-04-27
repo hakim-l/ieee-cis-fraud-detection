@@ -6,6 +6,52 @@
 
 A machine learning project for detecting fraudulent transactions using the IEEE CIS Fraud Detection dataset from [Kaggle](https://www.kaggle.com/c/ieee-fraud-detection/discussion/101203).
 
+## Project Organization
+
+```
+├── LICENSE                  <- MIT License
+├── Makefile                 <- Convenience commands
+├── README.md                <- Project documentation
+├── pyproject.toml           <- Project config & dependencies
+├── requirements.txt         <- Pinned dependencies
+├── .pre-commit-config.yaml  <- Pre-commit hooks
+│
+├── data/
+│   ├── raw/                 <- Original immutable data (from Kaggle)
+│   ├── interim/             <- Intermediate transformed data (Parquet)
+│   └── processed/           <- Final datasets for modeling
+│
+├── src/                     <- Source code for the project
+│   ├── __init__.py
+│   ├── config.py            <- Configuration constants
+│   ├── dataset/             <- Data loading and handling
+│   ├── preprocessing/       <- Data preprocessing utilities
+│   ├── feature_engineering/ <- Feature creation and transformation
+│   ├── metrics/             <- Evaluation metrics
+│   ├── models/              <- Model training and inference
+│   ├── train/               <- Training pipeline
+│   ├── tune_hyperparameter/ <- Hyperparameter optimization
+│   ├── utils/               <- Utility functions
+│   └── pipeline/            <- End-to-end pipeline scripts
+│
+├── tests/
+│   └── unit/
+│       ├── prepare_dataset/            <- Dataset tests
+│       └── tune_hyperparameter/        <- Tuning tests
+│
+├── notebooks/               <- Jupyter notebooks
+│   └── [1.0-initials-description.ipynb]
+│
+├── models/                  <- Trained models and predictions
+│
+├── docs/                    <- Documentation (mkdocs)
+│
+├── references/              <- Data dictionaries and manuals
+│
+└── reports/                 <- Generated analysis and reports
+    └── figures/             <- Generated graphics and figures
+```
+
 ## Quick Start
 
 ### Prerequisites
@@ -100,52 +146,6 @@ make clean-all      # Deep clean (cache, coverage, models, data)
 ### Documentation
 ```bash
 make help           # Show all available commands
-```
-
-## Project Organization
-
-```
-├── LICENSE                  <- MIT License
-├── Makefile                 <- Convenience commands
-├── README.md                <- Project documentation
-├── pyproject.toml           <- Project config & dependencies
-├── requirements.txt         <- Pinned dependencies
-├── .pre-commit-config.yaml  <- Pre-commit hooks
-│
-├── data/
-│   ├── raw/                 <- Original immutable data (from Kaggle)
-│   ├── interim/             <- Intermediate transformed data (Parquet)
-│   └── processed/           <- Final datasets for modeling
-│
-├── src/                     <- Source code for the project
-│   ├── __init__.py
-│   ├── config.py            <- Configuration constants
-│   ├── dataset/             <- Data loading and handling
-│   ├── preprocessing/       <- Data preprocessing utilities
-│   ├── feature_engineering/ <- Feature creation and transformation
-│   ├── metrics/             <- Evaluation metrics
-│   ├── models/              <- Model training and inference
-│   ├── train/               <- Training pipeline
-│   ├── tune_hyperparameter/ <- Hyperparameter optimization
-│   ├── utils/               <- Utility functions
-│   └── pipeline/            <- End-to-end pipeline scripts
-│
-├── tests/
-│   └── unit/
-│       ├── prepare_dataset/            <- Dataset tests
-│       └── tune_hyperparameter/        <- Tuning tests
-│
-├── notebooks/               <- Jupyter notebooks
-│   └── [1.0-initials-description.ipynb]
-│
-├── models/                  <- Trained models and predictions
-│
-├── docs/                    <- Documentation (mkdocs)
-│
-├── references/              <- Data dictionaries and manuals
-│
-└── reports/                 <- Generated analysis and reports
-    └── figures/             <- Generated graphics and figures
 ```
 
 ## Key Technologies
