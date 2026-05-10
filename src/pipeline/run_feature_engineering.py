@@ -12,6 +12,13 @@ import pandas as pd
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def save_numeric_scaling_parameters(scaling_parameters, output_dir):
+
+    """Save numeric scaling parameters to a JSON file."""
+    output_file = output_dir / "numeric_scaling_parameters.json"
+    with open(output_file, 'w') as f:
+        json.dump(scaling_parameters, f)
+    logger.info(f"Numeric scaling parameters saved to {output_file}")
 
 def select_features(dask_dataframe, feature_names):
     """Select specific features from the Dask DataFrame."""
