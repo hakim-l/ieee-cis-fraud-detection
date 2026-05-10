@@ -12,6 +12,9 @@ from sklearn.metrics import roc_auc_score, classification_report
 import numpy as np
 import pandas as pd
 import gc
+import optuna
+from sklearn.isotonic import IsotonicRegression
+import joblib
 
 def create_model_dir_if_not_exists(model_dir=MODELS_DIR):
     """Create the model directory if it does not exist."""
@@ -100,7 +103,7 @@ if __name__ == "__main__":
         categorical_feature= [col for col in CATEGORICAL_FEATURES_LIST if col in train_dataframe.columns],
         # focal_loss_alpha=0.25,
         # focal_loss_gamma=2.0,
-        # class_weight= "balanced",
+        class_weight= "balanced",
     ) 
 
     x_train= train_set[USED_FEATURE_NAMES]
@@ -115,25 +118,38 @@ if __name__ == "__main__":
             y=y_train,
         )
 
-        y_train= y_train.compute()
-        train_pred= model.predict(x_train)
+        lgbm_train_pred_proba= model.predict_proba(x_train)[:,1]
+        lgbm_val_pred_proba= model.predict_proba(x_validation)[:,1]
 
-        y_val= y_validation.compute()
-        val_pred= model.predict(x_validation)
+        y_train_numpy= y_train.compute()
+        y_val_numpy= y_validation.compute()
+    
+    print(
+        "y unique", np.unique(y_train_numpy)
+    )
+    isotonic_model= IsotonicRegression(out_of_bounds="clip")
+    isotonic_model.fit(
+        lgbm_train_pred_proba,
+        y_train_numpy.astype(int)
+    )
+
+    train_pred= isotonic_model.predict(lgbm_train_pred_proba)
+    
+    val_pred= isotonic_model.predict(lgbm_val_pred_proba)
 
     print('Training set performance:')
     print(
         classification_report(
-            y_train,
-            train_pred
+            y_train_numpy.astype(int),
+            train_pred.astype(int)
         )
     )
 
     print('Validation set performance:')
     print(
         classification_report(
-            y_val,
-            val_pred
+            y_val_numpy.astype(int),
+            val_pred.astype(int)
         )
     )
 
@@ -141,3 +157,6 @@ if __name__ == "__main__":
     model.save(
         MODELS_DIR / "lgbm_dask_classifier.pkl"
     )
+
+    with open(MODELS_DIR / "isotonic_model.pkl", "wb") as f:
+        joblib.dump(isotonic_model, f)
