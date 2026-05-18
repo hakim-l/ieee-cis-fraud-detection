@@ -8,13 +8,17 @@ from src.config import (
     TARGET_COLUMN,
     MODELS_DIR
 )
-from sklearn.metrics import roc_auc_score, classification_report
+from sklearn.metrics import roc_auc_score, classification_report, f1_score, precision_score, recall_score
 import numpy as np
 import pandas as pd
+import dask.dataframe as dd
 import gc
 import optuna
 from sklearn.isotonic import IsotonicRegression
 import joblib
+import typer
+
+app = typer.Typer()
 
 def create_model_dir_if_not_exists(model_dir=MODELS_DIR):
     """Create the model directory if it does not exist."""
@@ -41,8 +45,38 @@ def datasplit_on_partition(pandas_dataframe, frac, random_state=None):
     gc.collect()
     return results
 
-if __name__ == "__main__":
-    # Create Dask client
+def run_negative_sampling(dask_dataframe, target_column, random_state=None):
+    """Run negative sampling on the given Dask DataFrame."""
+    # Separate positive and negative samples
+    positive_samples = dask_dataframe[dask_dataframe[target_column] == 1]
+    negative_samples = dask_dataframe[dask_dataframe[target_column] == 0]
+    
+    # Sample negative samples to balance the dataset
+    rng = np.random.default_rng(random_state)
+    negative_sampled = negative_samples.sample(
+        frac= len(positive_samples) / len(negative_samples),
+        random_state=rng.integers(0, 1e6)
+    )
+    
+    # Combine positive samples with sampled negative samples
+    balanced_dataset = dd.concat([positive_samples, negative_sampled])
+    
+    return balanced_dataset
+
+def compute_metrics(y_true, x, model, isotonic_model):
+    y_model_pred_proba= model.predict_proba(x)[:,1]
+    # y_model_pred_proba= y_model_pred_proba_dask.compute()
+    isotonic_proba= isotonic_model.predict(y_model_pred_proba)
+    y_pred= (isotonic_proba >= 0.5).astype(int)
+    return {
+        "roc_auc": roc_auc_score(y_true, isotonic_proba),
+        "f1_score": f1_score(y_true, y_pred),
+        "precision": precision_score(y_true, y_pred),
+        "recall": recall_score(y_true, y_pred)
+    }
+
+def main(do_negative_sampling: bool=False):
+      # Create Dask client
     client = create_dask_client()
     
     # Run feature engineering and save to processed directory
@@ -124,34 +158,43 @@ if __name__ == "__main__":
         y_train_numpy= y_train.compute()
         y_val_numpy= y_validation.compute()
     
-    print(
-        "y unique", np.unique(y_train_numpy)
-    )
-    isotonic_model= IsotonicRegression(out_of_bounds="clip")
-    isotonic_model.fit(
-        lgbm_train_pred_proba,
-        y_train_numpy.astype(int)
-    )
+        isotonic_model= IsotonicRegression(out_of_bounds="clip")
+        isotonic_model.fit(
+            lgbm_train_pred_proba,
+            y_train_numpy.astype(int)
+        )
 
-    train_pred= isotonic_model.predict(lgbm_train_pred_proba)
+        train_metrics= compute_metrics(y_train_numpy, x_train, model, isotonic_model)
+        train_metrics['set']= 'train'
+
+        val_metrics= compute_metrics(y_val_numpy, x_validation, model, isotonic_model)
+        val_metrics['set']= 'validation'
+
+    metrics= pd.DataFrame([train_metrics, val_metrics])
+    metrics.to_csv(MODELS_DIR / "training_metrics.csv", index=False)
+
+    print("Training metrics:")
+    print(metrics)
+
+    # train_pred= isotonic_model.predict(lgbm_train_pred_proba)
     
-    val_pred= isotonic_model.predict(lgbm_val_pred_proba)
+    # val_pred= isotonic_model.predict(lgbm_val_pred_proba)
 
-    print('Training set performance:')
-    print(
-        classification_report(
-            y_train_numpy.astype(int),
-            train_pred.astype(int)
-        )
-    )
+    # print('Training set performance:')
+    # print(
+    #     classification_report(
+    #         y_train_numpy.astype(int),
+    #         train_pred.astype(int)
+    #     )
+    # )
 
-    print('Validation set performance:')
-    print(
-        classification_report(
-            y_val_numpy.astype(int),
-            val_pred.astype(int)
-        )
-    )
+    # print('Validation set performance:')
+    # print(
+    #     classification_report(
+    #         y_val_numpy.astype(int),
+    #         val_pred.astype(int)
+    #     )
+    # )
 
     create_model_dir_if_not_exists()
     model.save(
@@ -160,3 +203,7 @@ if __name__ == "__main__":
 
     with open(MODELS_DIR / "isotonic_model.pkl", "wb") as f:
         joblib.dump(isotonic_model, f)
+
+
+if __name__ == "__main__":
+    typer.run(main)
