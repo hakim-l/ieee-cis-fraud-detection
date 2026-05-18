@@ -161,7 +161,7 @@ class DatasetProcessor:
             is_test_file = re.search(r"test", csv_path.name, re.IGNORECASE) is not None
 
             # force categorical features to string type to preserve categories during merge
-            for col in CATEGORICAL_FEATURES_LIST:
+            for col in CATEGORICAL_FEATURES_LIST + [TARGET_COLUMN]:
                 if col in chunk.columns:
                     chunk[col] = self.force_column_to_string(chunk[col]).astype(str)
 
