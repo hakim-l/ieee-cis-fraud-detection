@@ -9,6 +9,7 @@ from src.config import (
     MODELS_DIR
 )
 from sklearn.metrics import roc_auc_score, classification_report, f1_score, precision_score, recall_score
+from src.metrics.expected_calibration_error import ExpectedCalibrationError
 import numpy as np
 import pandas as pd
 import dask.dataframe as dd
@@ -68,11 +69,16 @@ def compute_metrics(y_true, x, model, isotonic_model):
     # y_model_pred_proba= y_model_pred_proba_dask.compute()
     isotonic_proba= isotonic_model.predict(y_model_pred_proba)
     y_pred= (isotonic_proba >= 0.5).astype(int)
+    ece_metrics_calculator= ExpectedCalibrationError(n_bins=10)
     return {
         "roc_auc": roc_auc_score(y_true, isotonic_proba),
         "f1_score": f1_score(y_true, y_pred),
         "precision": precision_score(y_true, y_pred),
-        "recall": recall_score(y_true, y_pred)
+        "recall": recall_score(y_true, y_pred),
+        'ece': ece_metrics_calculator.compute_metrics(
+            y_true= y_true,
+            y_pred= y_model_pred_proba
+        )
     }
 
 def main(do_negative_sampling: bool=False):
@@ -176,25 +182,25 @@ def main(do_negative_sampling: bool=False):
     print("Training metrics:")
     print(metrics)
 
-    # train_pred= isotonic_model.predict(lgbm_train_pred_proba)
+    train_pred= isotonic_model.predict(lgbm_train_pred_proba)
     
-    # val_pred= isotonic_model.predict(lgbm_val_pred_proba)
+    val_pred= isotonic_model.predict(lgbm_val_pred_proba)
 
-    # print('Training set performance:')
-    # print(
-    #     classification_report(
-    #         y_train_numpy.astype(int),
-    #         train_pred.astype(int)
-    #     )
-    # )
+    print('Training set performance:')
+    print(
+        classification_report(
+            y_train_numpy.astype(int),
+            train_pred.astype(int)
+        )
+    )
 
-    # print('Validation set performance:')
-    # print(
-    #     classification_report(
-    #         y_val_numpy.astype(int),
-    #         val_pred.astype(int)
-    #     )
-    # )
+    print('Validation set performance:')
+    print(
+        classification_report(
+            y_val_numpy.astype(int),
+            val_pred.astype(int)
+        )
+    )
 
     create_model_dir_if_not_exists()
     model.save(
