@@ -180,7 +180,6 @@ class TabTransformerTFRecordTrainer:
         focal_loss_gamma: float = 2.0,
         random_seed: int = 42,
         cache_dataset: bool = False,
-    ,
         resume: bool = False,
         save_checkpoints: bool = True,
     ) -> None:
