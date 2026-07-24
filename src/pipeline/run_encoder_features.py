@@ -168,7 +168,31 @@ def run_encoder_feature_pipeline(
         raise FileNotFoundError(f"TabTransformer model not found in {model_dir}")
 
     # load the full model and extract encoder
-    loaded = tf.keras.models.load_model(str(model_path), compile=False)
+    # Enable unsafe deserialization to allow deserializing Lambda layers created with Python lambdas
+    # (trusted local artifact). If unavailable, fall back and let load_model raise a clear error.
+    try:
+        try:
+            from tensorflow import keras as _keras
+            _keras.config.enable_unsafe_deserialization()
+        except Exception:
+            import keras as _keras
+            _keras.config.enable_unsafe_deserialization()
+    except Exception:
+        # If enabling unsafe deserialization isn't available, proceed and allow load_model to raise a helpful error
+        pass
+
+    try:
+        loaded = tf.keras.models.load_model(str(model_path), compile=False)
+    except ValueError as exc:
+        # Provide clearer guidance if lambda deserialization is blocked
+        raise ValueError(
+            "Failed to deserialize the saved TabTransformer model. "
+            "This often happens when the model contains Lambda layers defined with Python lambdas. "
+            "If you trust the model artifact, set this environment by enabling unsafe deserialization: "
+            "from tensorflow import keras; keras.config.enable_unsafe_deserialization() before loading, "
+            "or set Keras config accordingly."
+        ) from exc
+
     encoder = loaded.get_layer("tab_transformer_encoder")
 
     # Find all parquet files under source_dir recursively
