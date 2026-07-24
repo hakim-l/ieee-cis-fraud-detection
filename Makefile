@@ -135,6 +135,21 @@ features:
 train:
 	$(PYTHON_INTERPRETER) -m src.pipeline.run_training
 
+## Convert processed parquet features to TFRecord datasets
+.PHONY: tfrecord
+tfrecord:
+	$(PYTHON_INTERPRETER) -m src.pipeline.run_tfrecord_conversion
+
+## Train TabTransformer from processed TFRecord datasets
+.PHONY: train-tab-transformer
+train-tab-transformer:
+	$(PYTHON_INTERPRETER) -m src.pipeline.run_tab_transformer_training
+
+## Compute TabTransformer encoder features and append to processed parquet
+.PHONY: encoder-features
+encoder-features:
+	$(PYTHON_INTERPRETER) -m src.pipeline.run_encoder_features
+
 ## Run complete pipeline: data → features → train
 .PHONY: pipeline
 pipeline: data features train
