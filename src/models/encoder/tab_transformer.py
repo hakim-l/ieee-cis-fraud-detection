@@ -85,6 +85,9 @@ class TabTransformer(BaseModel):
         feedforward_dim: int = 128,
         mlp_hidden_units: Iterable[int] = (64, 32),
         dropout_rate: float = 0.1,
+        loss: str | tf.keras.losses.Loss = "binary_crossentropy",
+        focal_loss_alpha: float = 0.25,
+        focal_loss_gamma: float = 2.0,
     ) -> None:
         self.categorical_cardinalities = tuple(categorical_cardinalities)
         self.num_numeric_features = num_numeric_features
@@ -94,6 +97,9 @@ class TabTransformer(BaseModel):
         self.feedforward_dim = feedforward_dim
         self.mlp_hidden_units = tuple(mlp_hidden_units)
         self.dropout_rate = dropout_rate
+        self.loss = loss
+        self.focal_loss_alpha = focal_loss_alpha
+        self.focal_loss_gamma = focal_loss_gamma
 
         self._validate_configuration()
         self.encoder, self.prediction_head, self.model = self._build_models()
@@ -115,6 +121,12 @@ class TabTransformer(BaseModel):
             raise ValueError("num_transformer_blocks must be greater than 0")
         if self.feedforward_dim <= 0:
             raise ValueError("feedforward_dim must be greater than 0")
+        if isinstance(self.loss, str) and self.loss not in {"binary_crossentropy", "focal_loss"}:
+            raise ValueError("loss must be 'binary_crossentropy', 'focal_loss', or a Keras loss")
+        if self.focal_loss_alpha <= 0:
+            raise ValueError("focal_loss_alpha must be greater than 0")
+        if self.focal_loss_gamma < 0:
+            raise ValueError("focal_loss_gamma must be greater than or equal to 0")
 
     def _build_models(self) -> tuple[tf.keras.Model, tf.keras.Model, tf.keras.Model]:
         categorical_inputs = tf.keras.Input(
@@ -266,20 +278,24 @@ class TabTransformer(BaseModel):
         if "optimizer" not in kwargs:
             kwargs["optimizer"] = tf.keras.optimizers.Adam()
         if "loss" not in kwargs:
-            kwargs["loss"] = tf.keras.losses.BinaryCrossentropy()
+            kwargs["loss"] = self._resolve_loss()
         self.model.compile(**kwargs)
 
-    def fit(self, X, y, **kwargs):
+    def fit(self, X, y=None, **kwargs):
         if not self._is_compiled():
             self.compile(metrics=["accuracy"])
+        if y is None:
+            return self.model.fit(X, **kwargs)
         return self.model.fit(X, y, **kwargs)
 
     def predict(self, X, **kwargs):
         return self.model.predict(X, **kwargs)
 
-    def evaluate(self, X, y, **kwargs):
+    def evaluate(self, X, y=None, **kwargs):
         if not self._is_compiled():
             self.compile(metrics=["accuracy"])
+        if y is None:
+            return self.model.evaluate(X, **kwargs)
         return self.model.evaluate(X, y, **kwargs)
 
     def save(self, file_path) -> None:
@@ -338,9 +354,19 @@ class TabTransformer(BaseModel):
             if isinstance(layer, tf.keras.layers.Dense) and layer.name.startswith("prediction_dense_")
         )
         self.dropout_rate = self._infer_dropout_rate()
+        self.loss = self._infer_loss()
+        self.focal_loss_alpha = self._infer_focal_loss_alpha()
+        self.focal_loss_gamma = self._infer_focal_loss_gamma()
 
-        # Access the inputs to preserve the public input names after load.
-        # _ = categorical_input, numeric_input
+    def _resolve_loss(self) -> str | tf.keras.losses.Loss:
+        if not isinstance(self.loss, str):
+            return self.loss
+        if self.loss == "binary_crossentropy":
+            return tf.keras.losses.BinaryCrossentropy()
+        return tf.keras.losses.BinaryFocalCrossentropy(
+            alpha=self.focal_loss_alpha,
+            gamma=self.focal_loss_gamma,
+        )
 
     def _infer_num_heads(self) -> int:
         for layer in self.encoder.layers:
@@ -362,6 +388,25 @@ class TabTransformer(BaseModel):
             if isinstance(layer, TransformerEncoderBlock):
                 return float(layer.dropout_rate)
         return 0.0
+
+    def _infer_loss(self) -> str | tf.keras.losses.Loss:
+        if self.model.loss is None:
+            return "binary_crossentropy"
+        if isinstance(self.model.loss, tf.keras.losses.BinaryFocalCrossentropy):
+            return "focal_loss"
+        if isinstance(self.model.loss, tf.keras.losses.BinaryCrossentropy):
+            return "binary_crossentropy"
+        return self.model.loss
+
+    def _infer_focal_loss_alpha(self) -> float:
+        if isinstance(self.model.loss, tf.keras.losses.BinaryFocalCrossentropy):
+            return float(self.model.loss.alpha)
+        return 0.25
+
+    def _infer_focal_loss_gamma(self) -> float:
+        if isinstance(self.model.loss, tf.keras.losses.BinaryFocalCrossentropy):
+            return float(self.model.loss.gamma)
+        return 2.0
 
     def _is_compiled(self) -> bool:
         return self.model.optimizer is not None
