@@ -513,6 +513,7 @@ class TabTransformerTFRecordTrainer:
         history_path = self.model_dir / "history.json"
         evaluation_path = self.model_dir / "evaluation.json"
         preprocessing_path = self.model_dir / "preprocessing.json"
+        training_config_path = self.model_dir / "training_config.json"
 
         history_payload = {
             metric_name: [float(value) for value in values]
@@ -533,9 +534,22 @@ class TabTransformerTFRecordTrainer:
             },
         }
 
+        training_config_payload = {
+            "embedding_dim": self.embedding_dim,
+            "num_heads": self.num_heads,
+            "num_transformer_blocks": self.num_transformer_blocks,
+            "feedforward_dim": self.feedforward_dim,
+            "mlp_hidden_units": list(self.mlp_hidden_units),
+            "dropout_rate": self.dropout_rate,
+            "loss": self.loss,
+            "focal_loss_alpha": self.focal_loss_alpha,
+            "focal_loss_gamma": self.focal_loss_gamma,
+        }
+
         history_path.write_text(json.dumps(history_payload, indent=2), encoding="utf-8")
         evaluation_path.write_text(json.dumps(evaluation, indent=2), encoding="utf-8")
         preprocessing_path.write_text(json.dumps(preprocessing_payload, indent=2), encoding="utf-8")
+        training_config_path.write_text(json.dumps(training_config_payload, indent=2), encoding="utf-8")
 
 
 def main() -> None:
