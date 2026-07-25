@@ -37,6 +37,17 @@ def _load_preprocessing(model_dir: Path) -> Dict:
     return json.loads(preprocessing_path.read_text(encoding="utf-8"))
 
 
+def _load_training_config(model_dir: Path) -> Dict:
+    """Load training hyperparameters from training_config.json."""
+    training_config_path = model_dir / "training_config.json"
+    if not training_config_path.exists():
+        raise FileNotFoundError(
+            f"Missing training_config.json: {training_config_path}. "
+            "Please train the model first or ensure training_config.json was saved."
+        )
+    return json.loads(training_config_path.read_text(encoding="utf-8"))
+
+
 def _map_categorical_column(series: pd.Series, vocabulary: List[str], unk_index: int = 0) -> np.ndarray:
     """Map a pandas Series to integer indices using the provided vocabulary.
     Unknowns and NA map to unk_index. Values are converted to strings before lookup.
@@ -167,33 +178,62 @@ def run_encoder_feature_pipeline(
     if not model_path.exists():
         raise FileNotFoundError(f"TabTransformer model not found in {model_dir}")
 
-    # load the full model and extract encoder
-    # Enable unsafe deserialization to allow deserializing Lambda layers created with Python lambdas
-    # (trusted local artifact). If unavailable, fall back and let load_model raise a clear error.
-    try:
-        try:
-            from tensorflow import keras as _keras
-            _keras.config.enable_unsafe_deserialization()
-        except Exception:
-            import keras as _keras
-            _keras.config.enable_unsafe_deserialization()
-    except Exception:
-        # If enabling unsafe deserialization isn't available, proceed and allow load_model to raise a helpful error
-        pass
+    # Load training hyperparameters from training_config.json
+    training_config = _load_training_config(model_dir)
+    embedding_dim = training_config["embedding_dim"]
+    num_heads = training_config["num_heads"]
+    num_transformer_blocks = training_config["num_transformer_blocks"]
+    feedforward_dim = training_config["feedforward_dim"]
+    mlp_hidden_units = tuple(training_config["mlp_hidden_units"])
+    dropout_rate = training_config["dropout_rate"]
 
+    # categorical cardinalities from preprocessing
+    categorical_cardinalities = preprocessing.get("categorical_cardinalities")
+    if not categorical_cardinalities:
+        # derive from vocabularies
+        categorical_cardinalities = [len(vocab) for vocab in vocabularies.values()]
+
+    # Build TabTransformer instance and load weights
+    from src.models.encoder.tab_transformer import TabTransformer
+
+    model_instance = TabTransformer(
+        categorical_cardinalities=categorical_cardinalities,
+        num_numeric_features=len(numeric_names),
+        embedding_dim=embedding_dim,
+        num_heads=num_heads,
+        num_transformer_blocks=num_transformer_blocks,
+        feedforward_dim=feedforward_dim,
+        mlp_hidden_units=mlp_hidden_units,
+        dropout_rate=dropout_rate,
+    )
+
+    # Extract weights from .keras archive
+    import zipfile
+    import tempfile
+
+    with zipfile.ZipFile(str(model_path), "r") as z:
+        # Extract weights to a temporary file
+        weight_member = None
+        for name in z.namelist():
+            if name.endswith(".h5") or name.endswith(".weights.h5"):
+                weight_member = name
+                break
+        if weight_member is None:
+            raise FileNotFoundError(f"No weights (.h5) file found inside {model_path}")
+
+        tmpdir = tempfile.mkdtemp()
+        z.extract(weight_member, path=tmpdir)
+        weights_path = Path(tmpdir) / Path(weight_member).name
+
+    # Load HDF5 weights
     try:
-        loaded = tf.keras.models.load_model(str(model_path), compile=False)
-    except ValueError as exc:
-        # Provide clearer guidance if lambda deserialization is blocked
-        raise ValueError(
-            "Failed to deserialize the saved TabTransformer model. "
-            "This often happens when the model contains Lambda layers defined with Python lambdas. "
-            "If you trust the model artifact, set this environment by enabling unsafe deserialization: "
-            "from tensorflow import keras; keras.config.enable_unsafe_deserialization() before loading, "
-            "or set Keras config accordingly."
+        model_instance.model.load_weights(str(weights_path))
+    except Exception as exc:
+        raise RuntimeError(
+            "Failed to load model weights. Ensure the weights file inside the .keras archive is present."
         ) from exc
 
-    encoder = loaded.get_layer("tab_transformer_encoder")
+    encoder = model_instance.encoder
 
     # Find all parquet files under source_dir recursively
     parquet_files = list_files(source_dir, extension=".parquet", recursive=True)
