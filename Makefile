@@ -135,6 +135,11 @@ features:
 train:
 	$(PYTHON_INTERPRETER) -m src.pipeline.run_training
 
+## Train using encoder features (reads data/processed_with_encoder_features)
+.PHONY: train-encoder-features
+train-encoder-features:
+	$(PYTHON_INTERPRETER) -m src.pipeline.run_training_encoder_features
+
 ## Convert processed parquet features to TFRecord datasets
 .PHONY: tfrecord
 tfrecord:
